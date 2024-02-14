@@ -162,118 +162,118 @@ self.addEventListener('activate', function (e) {
     );
 });
 
-function distinct(value, index, self) {
-    return self.indexOf(value) === index;
-}
+// function distinct(value, index, self) {
+//     return self.indexOf(value) === index;
+// }
 
-function debounce(func, wait, immediate) {
-    var timeout;
-    return function() {
-      var context = this,
-        args = arguments;
-      var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(function() {
-        timeout = null;
-        if (!immediate) {
-          func.apply(context, args);
-        }
-      }, wait);
-      if (callNow) func.apply(context, args);
-    }
-  }
+// function debounce(func, wait, immediate) {
+//     var timeout;
+//     return function() {
+//       var context = this,
+//         args = arguments;
+//       var callNow = immediate && !timeout;
+//       clearTimeout(timeout);
+//       timeout = setTimeout(function() {
+//         timeout = null;
+//         if (!immediate) {
+//           func.apply(context, args);
+//         }
+//       }, wait);
+//       if (callNow) func.apply(context, args);
+//     }
+//   }
 
-  var post;
-  var playing=false;
+//   var post;
+//   var playing=false;
 
-  var beat=0;
-var tempo=60;
-var smallest=1/32;
-var allNotes;
-var maxBeat;
-var melody=[];
-var chords=[];
+//   var beat=0;
+// var tempo=60;
+// var smallest=1/32;
+// var allNotes;
+// var maxBeat;
+// var melody=[];
+// var chords=[];
 
-function parseFraction(str) {
-    const [numerator, denominator] = str.split('/').map(Number);
+// function parseFraction(str) {
+//     const [numerator, denominator] = str.split('/').map(Number);
   
-    if (!denominator || isNaN(numerator) || isNaN(denominator)) {
-      // Handle invalid input
-      return NaN;
-    }
+//     if (!denominator || isNaN(numerator) || isNaN(denominator)) {
+//       // Handle invalid input
+//       return NaN;
+//     }
   
-    return numerator / denominator;
-  }
+//     return numerator / denominator;
+//   }
 
-  addEventListener("message", (event) => {
-    let data = event.data;
-console.log(data)
-    if(data.type === 'init'){
-        post = (data) => event.source.postMessage(data);
-    } else if(data.type === 'play'){
-        playing=true;
-        setNotes(data.value||[{p:67, b:0, t:2},{p:80, b:0, t:2},{p:80, b:1, t:2}])
-        play();
-    }else if(data.type === 'stop'){
-        playing=false;
-    }else if(data.type === 'tempo'){
-        tempo=data.value;
-    }else if(data.type === 'pattern'){
-        let n = [];
-        let c = 0;
-        let ornAcc = 0;
+//   addEventListener("message", (event) => {
+//     let data = event.data;
+// console.log(data)
+//     if(data.type === 'init'){
+//         post = (data) => event.source.postMessage(data);
+//     } else if(data.type === 'play'){
+//         playing=true;
+//         setNotes(data.value||[{p:67, b:0, t:2},{p:80, b:0, t:2},{p:80, b:1, t:2}])
+//         play();
+//     }else if(data.type === 'stop'){
+//         playing=false;
+//     }else if(data.type === 'tempo'){
+//         tempo=data.value;
+//     }else if(data.type === 'pattern'){
+//         let n = [];
+//         let c = 0;
+//         let ornAcc = 0;
         
-        for(let v of data.value){
-            p = 67;
-            let orn=false;
-            let silent=false;
-            if(v.indexOf("|")>-1){
-                v = v.replace("|","");
-                orn=true;
-            }
-            if(v.indexOf("@")>-1){
-                v = v.replace("@","");
-                orn=silent;
-            }
-            console.log(v)
-            v = Math.round(parseFraction(v)*10000)
-            if(orn){
-                v/=5;
-                ornAcc+=v
-            }else if (ornAcc>0){
-                v-=ornAcc
-                ornAcc=0;
-            }
-            smallest = Math.min(smallest, v)
-            if(silent){
-                p=0;
-            }
-            n.push({
-                p,
-                b: c,
-                t: v
-            })
-            c+=v
-        }
-        console.log(n, smallest)
-        setNotes(n)
-    }
-  });
+//         for(let v of data.value){
+//             p = 67;
+//             let orn=false;
+//             let silent=false;
+//             if(v.indexOf("|")>-1){
+//                 v = v.replace("|","");
+//                 orn=true;
+//             }
+//             if(v.indexOf("@")>-1){
+//                 v = v.replace("@","");
+//                 orn=silent;
+//             }
+//             console.log(v)
+//             v = Math.round(parseFraction(v)*10000)
+//             if(orn){
+//                 v/=5;
+//                 ornAcc+=v
+//             }else if (ornAcc>0){
+//                 v-=ornAcc
+//                 ornAcc=0;
+//             }
+//             smallest = Math.min(smallest, v)
+//             if(silent){
+//                 p=0;
+//             }
+//             n.push({
+//                 p,
+//                 b: c,
+//                 t: v
+//             })
+//             c+=v
+//         }
+//         console.log(n, smallest)
+//         setNotes(n)
+//     }
+//   });
 
-  const setNotes = (val)=>{
-  allNotes=val
-  let lastNote = allNotes.reduce((max, current) => {
-    return current['b'] > max['b'] ? current : max;
-  }, allNotes[0]);
-  maxBeat = lastNote.b+lastNote.t
-  }
+//   const setNotes = (val)=>{
+//   allNotes=val
+//   let lastNote = allNotes.reduce((max, current) => {
+//     return current['b'] > max['b'] ? current : max;
+//   }, allNotes[0]);
+//   maxBeat = lastNote.b+lastNote.t
+//   }
 
-  const play = () =>{
-    if(playing){
-        let notes = allNotes.filter(f=>f.b===beat).map(f=>f.p).filter(f=>f!==0)
-        post({type:'start', notes})
-        beat+=0.1;
-        beat %= maxBeat
-        setTimeout(()=>play(),Math.round(4*60/tempo))
-    }
-  }
+//   const play = () =>{
+//     if(playing){
+//         let notes = allNotes.filter(f=>f.b===beat).map(f=>f.p).filter(f=>f!==0)
+//         post({type:'start', notes})
+//         beat+=0.1;
+//         beat %= maxBeat
+//         setTimeout(()=>play(),Math.round(4*60/tempo))
+//     }
+//   }

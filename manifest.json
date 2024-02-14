@@ -1,9 +1,9 @@
 {
-    "name": "BassoCon",
-    "short_name": "BassoCon",
-    "description": "A Chord Player",
-    "id": "/BassoConV2/",
-    "start_url": "/BassoConV2/",
+    "name": "Improv",
+    "short_name": "Improv",
+    "description": "A Player",
+    "id": "/improv/",
+    "start_url": "/improv/",
     "display": "standalone",
     "orientation":"landscape",
     "icons": [

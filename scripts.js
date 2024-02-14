@@ -71,19 +71,19 @@ body.addEventListener("touchmove", function (e) {
   e.preventDefault();
 });
 // ------------------------------------ debug ------------------------------------
-// window.onerror = (a, b, c, d, e) => {
-//   const message = `
-//   message: ${a}
-//   source: ${b}
-//   lineno: ${c}
-//   colno: ${d}
-//   error: ${e}
-//   --------
-//   `;
-//   document.getElementById("log").innerText += message;
-//   console.log(message);
-//   return true;
-// };
+window.onerror = (a, b, c, d, e) => {
+  const message = `
+  message: ${a}
+  source: ${b}
+  lineno: ${c}
+  colno: ${d}
+  error: ${e}
+  --------
+  `;
+  document.getElementById("log").innerText += message;
+  console.log(message);
+  return true;
+};
 
 //------------------------------------ utilties ----------------------
 function setStorage(cname, cvalue) {
@@ -335,85 +335,85 @@ var play = (n, force = 1) => send([0x90, n, Math.round(force * 127)]);
 var stop = (n) => send([0x80, n, 0]);
 var changeForce = (n, force) => send([0xa0, n, Math.round(force * 127)]);
 
-var loop,tempo=70, patternIndex=0;
+// var loop,tempo=70, patternIndex=0;
 
-function parseFraction(str) {
-    const [numerator, denominator] = str.split('/').map(Number);
+// function parseFraction(str) {
+//     const [numerator, denominator] = str.split('/').map(Number);
   
-    if (!denominator || isNaN(numerator) || isNaN(denominator)) {
-      // Handle invalid input
-      return NaN;
-    }
+//     if (!denominator || isNaN(numerator) || isNaN(denominator)) {
+//       // Handle invalid input
+//       return NaN;
+//     }
   
-    return numerator / denominator;
-  }
+//     return numerator / denominator;
+//   }
 
-const buildNotes = (pattern)=>{
-    let n = [];
-        let c = 0;
-        let ornAcc = 0;
+// const buildNotes = (pattern)=>{
+//     let n = [];
+//         let c = 0;
+//         let ornAcc = 0;
         
-        for(let v of pattern){
-            let p = 67;
-            let orn=false;
-            let silent=false;
-            if(v.indexOf("|")>-1){
-                v = v.replace("|","");
-                orn=true;
-            }
-            if(v.indexOf("@")>-1){
-                v = v.replace("@","");
-                orn=silent;
-            }
-            console.log(v)
-            v = parseFraction(v)
-            if(orn){
-                v/=5;
-                ornAcc+=v
-            }else if (ornAcc>0){
-                v-=ornAcc
-                ornAcc=0;
-            }
-            if(silent){
-                p=0;
-            }
-            n.push({
-                p,
-                b: c,
-                t: v
-            })
-            c+=v
-        }
+//         for(let v of pattern){
+//             let p = 67;
+//             let orn=false;
+//             let silent=false;
+//             if(v.indexOf("|")>-1){
+//                 v = v.replace("|","");
+//                 orn=true;
+//             }
+//             if(v.indexOf("@")>-1){
+//                 v = v.replace("@","");
+//                 orn=silent;
+//             }
+//             console.log(v)
+//             v = parseFraction(v)
+//             if(orn){
+//                 v/=5;
+//                 ornAcc+=v
+//             }else if (ornAcc>0){
+//                 v-=ornAcc
+//                 ornAcc=0;
+//             }
+//             if(silent){
+//                 p=0;
+//             }
+//             n.push({
+//                 p,
+//                 b: c,
+//                 t: v
+//             })
+//             c+=v
+//         }
 
-        let lastNote = n.reduce((max, current) => {
-            return current['b'] > max['b'] ? current : max;
-          }, n[0]);
-          let maxBeat = lastNote.b+lastNote.t
+//         let lastNote = n.reduce((max, current) => {
+//             return current['b'] > max['b'] ? current : max;
+//           }, n[0]);
+//           let maxBeat = lastNote.b+lastNote.t
 
-        return [n,maxBeat*4*60/tempo];
-}
+//         return [n,maxBeat*4*60/tempo];
+// }
 
-var currentChord = 0;
-const getNote = (beat, index) => {
-    let chord = allChords[currentChord].noteNames.split(" ");
-    let notes = [chord[Math.floor(Math.random()*3)]+"4"]
-    if (index===0){
-        notes.push(chord[0]+"3")
-    }
-    return notes;
-}
+// var currentChord = 0;
+// const getNote = (beat, index) => {
+//     let chord = allChords[currentChord].noteNames.split(" ");
+//     let notes = [chord[Math.floor(Math.random()*3)]+"4"]
+//     if (index===0){
+//         notes.push(chord[0]+"3")
+//     }
+//     return notes;
+// }
 //Tone.Frequency(67, "midi").toNote()
-const seqBuilder = (index)=>{
-    let [pat,len] = buildNotes(rudiments[index].pattern);
-    return [(time)=>{
-        pat.forEach((p,i)=>{
-            let notes = getNote(p.b,i);
-            notes.forEach(n=>{
-                samplePlayer.triggerAttack(n,time+p.b*4*60/tempo,i===0?0.7:0.5);
-            })
-        })
-    }, len]
-}
+// const seqBuilder = (index)=>{
+//     let [pat,len] = buildNotes(rudiments[index].pattern);
+//     return [(time)=>{
+//         pat.forEach((p,i)=>{
+//             let notes = getNote(p.b,i);
+//             notes.forEach(n=>{
+//                 samplePlayer.triggerAttack(n,time+p.b*4*60/tempo,i===0?0.7:0.5);
+//             })
+//         })
+//     }, len]
+// }
 document.getElementById("load").addEventListener("click", loadSamples);
 document.getElementById("play").addEventListener("click", () => {
     // post({type:'play'})
@@ -432,25 +432,33 @@ document.getElementById("stop").addEventListener("click", () => {
     // loop.dispose()
     playing=false;
 });
+document.getElementById("log-btn").addEventListener("click", () => {
+  let el = document.getElementById("log");
+  if(el.style.display==="block"){
+    el.style.display="none"
+  }else{
+    el.style.display="block"
+  }
+});
 document.getElementById("tempo").addEventListener("change", (e) => {
     //post({type:'tempo',value:e.target._value})
-    tempo = e.target._value;
-    let [seq, len] = seqBuilder(patternIndex);
-    loop.callback = seq;
-    loop.interval = len;
+    tempo = parseInt(e.target.value);
+    // let [seq, len] = seqBuilder(patternIndex);
+    // loop.callback = seq;
+    // loop.interval = len;
 });
-document.getElementById("chord").addEventListener("change", (e) => {
-    //post({type:'tempo',value:e.target._value})
-    currentChord = e.target.value;
-});
-document.getElementById("rud").addEventListener("change", (e) => {
-    console.log(rudiments[e.target.value].name)
-    patternIndex = e.target.value;
-    let [seq, len] = seqBuilder(patternIndex);
-    loop.callback = seq;
-    loop.interval = len;
-    //post({type:'pattern',value:rudiments[e.target.value].pattern})
-});
+// document.getElementById("chord").addEventListener("change", (e) => {
+//     //post({type:'tempo',value:e.target._value})
+//     currentChord = e.target.value;
+// });
+// document.getElementById("rud").addEventListener("change", (e) => {
+//     console.log(rudiments[e.target.value].name)
+//     patternIndex = e.target.value;
+//     let [seq, len] = seqBuilder(patternIndex);
+//     loop.callback = seq;
+//     loop.interval = len;
+//     //post({type:'pattern',value:rudiments[e.target.value].pattern})
+// });
 
 // async function generateMelody() {
 //     // Initialize the MusicVAE model
