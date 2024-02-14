@@ -1,0 +1,50 @@
+/* input-knob {
+    width: 5rem;
+    padding: 10px;
+  }
+
+  input-knob::part(rotator) {
+    box-sizing: border-box;
+    border: 2px solid white;
+    border-radius: 100%;
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .mark-knob .mark-span{
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    font: bold 100% monospace;
+    color: white;
+  }
+
+  .mark-knob p{
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    font: 70% monospace;
+    color: white;
+  } */
+
+  my-slider{
+    width:5rem;
+    height:5rem;
+    margin: 5px;
+  }
+
+  canvas[resize] {
+    width: 100vw;
+    height: calc(100vh - 2rem);
+}
+
+.controls{
+  display: flex;
+  height:2rem
+}
+
+input, select{
+  margin:0!important;
+  padding: 0;
+  height:2rem;
+}
