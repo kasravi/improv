@@ -94,7 +94,12 @@ function getFromStorage(cname) {
   return JSON.parse(localStorage.getItem("improve-" + cname));
 }
 //------------------------------------ functionality -----------------------------
-var samples, samplePlayer, paths=[], width=0.5, notesToPlay={}, smallest=1/64, root=60, degrees=[0,2,4,5,7,9,11],tempo=60, snapToGrid=false,playing;
+var samples, samplePlayer, paths=[], width=0.5, notesToPlay={}, smallestBit=16, timeSig = 3,root=62, degrees=[0,2,3,5,7,8,10],tempo=60, snapToGrid=true,playing;
+var smallest = 1/(smallestBit*timeSig)
+const scale = degrees.concat(degrees.map(f=>f+12)).concat([degrees[0]+36,null])
+const getNotesFromY = (y) =>{
+  return scale[Math.ceil((1-(y/paper.view.bounds.height))*(scale.length-1))]+root
+}
 
 // var canvas = document.getElementById('canvas');
 // 		// Create an empty project and a view for the canvas:
@@ -103,17 +108,44 @@ var samples, samplePlayer, paths=[], width=0.5, notesToPlay={}, smallest=1/64, r
 // console.log(view)
 paper.install(window);
 paper.setup('canvas');
+
+var drawGridLines = function(num_rectangles_wide, num_rectangles_tall, boundingRect) {
+  var width_per_rectangle = boundingRect.width / num_rectangles_wide;
+  var height_per_rectangle = boundingRect.height / num_rectangles_tall;
+  for (var i = 0; i <= num_rectangles_wide; i++) {
+      var xPos = boundingRect.left + i * width_per_rectangle;
+      var topPoint = new paper.Point(xPos, boundingRect.top);
+      var bottomPoint = new paper.Point(xPos, boundingRect.bottom);
+      var aLine = new paper.Path.Line(topPoint, bottomPoint);
+      aLine.strokeColor = 'black';
+      aLine.strokeWidth = i%((1/smallest)/timeSig)===0?3:1;
+  }
+  for (var i = 0; i <= num_rectangles_tall; i++) {
+      var yPos = boundingRect.top + i * height_per_rectangle;
+      var leftPoint = new paper.Point(boundingRect.left, yPos);
+      var rightPoint = new paper.Point(boundingRect.right, yPos);
+      var aLine = new paper.Path.Line(leftPoint, rightPoint);
+      var text1 = new paper.PointText({
+        content: Tone.Frequency(getNotesFromY(yPos+1), "midi").toNote(),
+        
+        // ** Define position first and fontSize second **
+        point: new paper.Point(boundingRect.left, yPos-height_per_rectangle/4),
+        fontSize: '1em',
+        fillColor: "#999999"
+    });
+      aLine.strokeColor = 'black';
+  }
+}
+
+drawGridLines(1/smallest,scale.length-1, paper.view.bounds);
 		// Create a simple drawing tool:
 var tool = new Tool();
 var from = new Point(0, 0);
 var to = new Point(0, paper.view.bounds.height);
 var caret = new Path.Line(from, to);
 caret.strokeColor = 'red';
-const scale = degrees.concat(degrees.map(f=>f+12)).concat([degrees[0]+24,null])
 
-const getNotesFromY = (y) =>{
-  return scale[Math.ceil((1-(y/paper.view.bounds.height))*(scale.length-1))]+root
-}
+
 var alreadyPlayingLines = {}
 const playNote = (playingLines)=>{
 Object.keys(alreadyPlayingLines).forEach(pl=>{
@@ -129,7 +161,7 @@ alreadyPlayingLines = playingLines;
 view.onFrame = (event)=>{
   //path2.translate(3,0);
   if(playing){
-  caret.position.x+=(paper.view.bounds.height*smallest)*60/tempo;
+  caret.position.x+=(paper.view.bounds.width*smallest)*tempo/(4*60);
   caret.position.x%=paper.view.bounds.width;
   let ints = paths.map((path,i)=> [i,showIntersections(caret,path)]).filter(i=>i[1].length>0).reduce((a,i)=>{a[i[0]]=getNotesFromY(i[1][0]);return a;},{});
   playNote(ints)
@@ -165,13 +197,14 @@ tool.onMouseDrag = function(event) {
 
 tool.onMouseUp = function(event) {
   var path = paths[paths.length-1];
+  let sanppingGrid = paper.view.bounds.width*smallest;
   if(path) {
-    if(event.point.getDistance(startPoint)<2){
+    if(Math.abs(event.point.x-startPoint.x)<(sanppingGrid/2)){
       paths.pop()
+      path.remove()
       startPoint=null;
       return;
     }
-  let sanppingGrid = paper.view.bounds.width*smallest;
   var point = snapToGrid?new paper.Point(Math.ceil(event.point.x/sanppingGrid)*sanppingGrid, event.point.y):event.point;
   path.add(point);
   
@@ -186,34 +219,24 @@ path.onMouseDown = (event)=>{
 }
 }
 
-var drawGridLines = function(num_rectangles_wide, num_rectangles_tall, boundingRect) {
-  var width_per_rectangle = boundingRect.width / num_rectangles_wide;
-  var height_per_rectangle = boundingRect.height / num_rectangles_tall;
-  for (var i = 0; i <= num_rectangles_wide; i++) {
-      var xPos = boundingRect.left + i * width_per_rectangle;
-      var topPoint = new paper.Point(xPos, boundingRect.top);
-      var bottomPoint = new paper.Point(xPos, boundingRect.bottom);
-      var aLine = new paper.Path.Line(topPoint, bottomPoint);
-      aLine.strokeColor = 'black';
-  }
-  for (var i = 0; i <= num_rectangles_tall; i++) {
-      var yPos = boundingRect.top + i * height_per_rectangle;
-      var leftPoint = new paper.Point(boundingRect.left, yPos);
-      var rightPoint = new paper.Point(boundingRect.right, yPos);
-      var aLine = new paper.Path.Line(leftPoint, rightPoint);
-      var text1 = new paper.PointText({
-        content: Tone.Frequency(getNotesFromY(yPos), "midi").toNote(),
-        
-        // ** Define position first and fontSize second **
-        point: new paper.Point(boundingRect.left, yPos-height_per_rectangle/4),
-        fontSize: '1em',
-        fillColor: "#999999"
-    });
-      aLine.strokeColor = 'black';
-  }
-}
+// var currentBeat=0
+// // for (let a of [0.5,0.5,0.75,0.25,0.25,0.25,0.5,0.5,0.75,0.25,0.25,0.25,0.5,0.5,1,0.5,0.5,2]){
+//   for (let a of [3,3,5.5,1.5,1.5,1.5,3,3,7,1,1,1,3,3,10]){
+//   let sanppingGrid = paper.view.bounds.width*smallest;
+//   console.log(currentBeat)
+//   let startPoint = new paper.Point(currentBeat*sanppingGrid,300);
+//   let endPoint = new paper.Point((currentBeat+a)*sanppingGrid-10,300);
+//   paths.push(new Path({
+//     segments: [startPoint,endPoint],
+//     strokeColor: 'white',
+//     strokeWidth: width*10,
+//     // Select the path, so we can see its segment points:
+//     //fullySelected: true
+//   }))
+//   currentBeat+=a;
+// }
 
-drawGridLines(1/smallest,scale.length-1, paper.view.bounds);
+
 
 var cir = [];
 function showIntersections(path1, path2) {
@@ -229,28 +252,29 @@ function showIntersections(path1, path2) {
   }
   return ys;
 }
-
+var changeSample = (val)=>{}
 const sampleChanged = (val) => {
-  samplePlayer = samples[val];
-  samplePlayer.connect(effects.tone.overdrive.getInput());
+  changeSample(val)
+  // samplePlayer = samples[val];
+  // samplePlayer.connect(effects.tone.overdrive.getInput());//TODO
   //getScene().sample = val;
 };
-var effects = {
-  obxd: {
-    overdrive: null,
-    delay: null,
-    reverb: null,
-    volume: null,
-    cabinet: null,
-  },
-  tone: {
-    overdrive: null,
-    delay: null,
-    reverb: null,
-    volume: null,
-    cabinet: null,
-  },
-};
+// var effects = {
+//   obxd: {
+//     overdrive: null,
+//     delay: null,
+//     reverb: null,
+//     volume: null,
+//     cabinet: null,
+//   },
+//   tone: {
+//     overdrive: null,
+//     delay: null,
+//     reverb: null,
+//     volume: null,
+//     cabinet: null,
+//   },
+// };
 function loadSamples() {
   return new Promise((resolve, reject) => {
     samples = SampleLibrary.load({
@@ -263,50 +287,66 @@ function loadSamples() {
       ],
       baseUrl: "samples/",
     });
-    Tone.Buffer.on("load", function () {
+    Tone.loaded().then(function () {
       // loop through instruments and set release, connect to master output
       for (var property in samples) {
         if (samples.hasOwnProperty(property)) {
-          samples[property].release = 0.5;
+          samples[property].release = 0;
+          samples[property].attack = 0;
           //samples[property].toMaster();//.connect(reverb);
         }
       }
-      Tone.getContext((context) => {
-        const stage = new pb.Stage(context);
-        const ctx = stage.getContext();
-        const board = new pb.Board(ctx);
-        stage.setBoard(board);
+      // let context = Tone.getContext();
+      // reverbjs.extend(context);
+      // var reverbUrl = "http://reverbjs.org/Library/StMarysAbbeyReconstructionPhase2.m4a";
+      // var reverbNode = context.createReverbFromUrl(reverbUrl, function() {
 
-        // Create the effects
-        effects.tone.overdrive = new pb.stomp.Overdrive(ctx);
-        effects.tone.reverb = new pb.stomp.Reverb(ctx);
-        effects.tone.volume = new pb.stomp.Volume(ctx);
-        effects.tone.cabinet = new pb.stomp.Cabinet(ctx);
-        effects.tone.delay = new pb.stomp.Delay(ctx);
+      //   reverbNode.connect(context.destination);
+      // });
+      changeSample = (val)=>{
+      var convolver = new Tone.Convolver("http://reverbjs.org/Library/AbernyteGrainSilo.m4a");//.toMaster();
+      var limiter = new Tone.Volume(-7);
+      samplePlayer = samples[val];
+      samplePlayer.connect(convolver);
+      convolver.connect(limiter)
+      limiter.toMaster();
+      };
+      changeSample("piano")
+        // const stage = new pb.Stage(context);
+        // const ctx = stage.getContext();
+        // const board = new pb.Board(ctx);
+        // stage.setBoard(board);
 
-        // Add the effects to the board
-        board.addPedals([
-          effects.tone.overdrive,
-          effects.tone.delay,
-          effects.tone.reverb,
-          effects.tone.volume,
-          effects.tone.cabinet,
-        ]);
+        // // Create the effects
+        // effects.tone.overdrive = new pb.stomp.Overdrive(ctx);
+        // effects.tone.reverb = new pb.stomp.Reverb(ctx);
+        // effects.tone.volume = new pb.stomp.Volume(ctx);
+        // effects.tone.cabinet = new pb.stomp.Cabinet(ctx);
+        // effects.tone.delay = new pb.stomp.Delay(ctx);
 
-        // Set the default effect parameters (you can adjust them as needed)
-        effects.tone.overdrive.setLevel(1);
-        effects.tone.overdrive.setDrive(0);
-        effects.tone.overdrive.setTone(0);
-        effects.tone.reverb.setLevel(1);
-        effects.tone.delay.setDelayTimer(0);
-        effects.tone.delay.setFeedbackGain(0);
-        effects.tone.delay.setLevel(0);
-        effects.tone.volume.setLevel(1);
+        // // Add the effects to the board
+        // board.addPedals([
+        //   effects.tone.overdrive,
+        //   effects.tone.delay,
+        //   effects.tone.reverb,
+        //   effects.tone.volume,
+        //   effects.tone.cabinet,
+        // ]);
 
-        samplePlayer = samples["piano"];
-        samplePlayer.connect(effects.tone.overdrive.getInput());
-        effects.tone.cabinet.getOutput().connect(context.destination);
-      });
+        // // Set the default effect parameters (you can adjust them as needed)
+        // effects.tone.overdrive.setLevel(1);
+        // effects.tone.overdrive.setDrive(0);
+        // effects.tone.overdrive.setTone(0);
+        // effects.tone.reverb.setLevel(1);
+        // effects.tone.delay.setDelayTimer(0);
+        // effects.tone.delay.setFeedbackGain(0);
+        // effects.tone.delay.setLevel(0);
+        // effects.tone.volume.setLevel(1);
+
+        // samplePlayer = samples["piano"];
+        // samplePlayer.connect(effects.tone.overdrive.getInput());
+        // effects.tone.cabinet.getOutput().connect(context.destination);
+      
 
       document
         .getElementById("select-instrumnets")
@@ -316,9 +356,9 @@ function loadSamples() {
         document.getElementById("load").style.setProperty("display", "none", "important");
       resolve();
     });
-    Tone.Buffer.on("error", function () {
+    Tone.Buffer.onerror = function () {
       reject("Failed loading samples");
-    });
+    };
   });
 }
 var send = (message) => {
